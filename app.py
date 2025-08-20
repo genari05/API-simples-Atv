@@ -1,0 +1,64 @@
+import re
+from flask import Flask, jsonify, request
+
+app = Flask(__name__)
+
+convidados = [
+    {'id': 1, 'nome': 'Tiago', 'email': 'tiago@email.com'},
+    {'id': 2, 'nome': 'Luiza', 'email': 'luiza@email.com'},
+    {'id': 3, 'nome': 'Davi', 'email': 'davi@email.com'}
+]
+
+@app.route('/')
+def bem_vindo():
+    return 'Faculdade Impacta Tecnologia', 200
+
+# Lista todos os convidados
+@app.route('/convidados', methods=['GET'])
+def lista_convidados():
+    return jsonify(convidados), 200
+
+# Busca convidado pelo id
+@app.route('/convidados/<int:id>', methods=['GET'])
+def id_por_convidado(id):
+    for convidado in convidados:
+        if convidado['id'] == id:
+            return jsonify(convidado), 200
+    return jsonify({'mensagem': 'Convidado não encontrado'}), 404
+
+
+# Adiciona novo convidado
+@app.route('/adicionar', methods=['POST'])
+def adicionar_convidado():
+    dados = request.get_json()
+
+    nome = dados.get('nome', '')
+    email = dados.get('email', '')
+
+    # Função para validar e-mail
+    def validar_email(email):
+        padrao = r'^[\w\.-]+@[\w\.-]+\.\w+$'
+        return re.match(padrao, email) is not None
+
+    # Checa se nome e email foram enviados
+    if not nome or not email:
+        return jsonify({'erro': 'Nome e e-mail são obrigatórios'}), 400
+
+    # Valida formato do e-mail
+    if not validar_email(email):
+        return jsonify({'erro': 'E-mail inválido'}), 400
+
+    # Gera novo ID automaticamente
+    novo_id = len(convidados) + 1
+    novo_convidado = {
+        'id': novo_id,
+        'nome': nome,
+        'email': email
+    }
+
+    convidados.append(novo_convidado)
+    return jsonify(novo_convidado), 201
+
+
+if __name__ == '__main__':
+    app.run(debug=True)
